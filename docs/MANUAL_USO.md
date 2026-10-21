@@ -24,6 +24,8 @@ $base = "http://localhost/al/public"
 
 Use apenas uma das opções acima. Os exemplos seguintes usam `$base`.
 
+Para abrir o painel administrativo no mesmo servidor, acesse `$base/admin/questoes.php`. Use a navegação para abrir respostas, áudios e localizações. O painel consome os mesmos endpoints documentados em [API.md](API.md), e o endpoint de áudio recebe `audio_url` (não faz upload nem hospeda arquivos).
+
 ## 2. Crie o endereço da resposta
 
 A resposta exige um endereço existente. Ajuste nome, CEP e coordenadas para o local real:

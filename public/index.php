@@ -39,6 +39,18 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
 
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $path = Router::stripBasePath($path, getenv('APP_BASE_PATH') ?: '');
+if (PHP_SAPI === 'cli-server' && $path !== '/') {
+    $requestedFile = realpath(__DIR__ . DIRECTORY_SEPARATOR . ltrim(
+        str_replace(['/', '\\'], DIRECTORY_SEPARATOR, rawurldecode($path)),
+        DIRECTORY_SEPARATOR,
+    ));
+    $publicRoot = realpath(__DIR__);
+    if ($requestedFile !== false && $publicRoot !== false
+        && is_file($requestedFile)
+        && str_starts_with($requestedFile, $publicRoot . DIRECTORY_SEPARATOR)) {
+        return false;
+    }
+}
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && $path === '/') {
     header('Content-Type: text/html; charset=utf-8');
     readfile(__DIR__ . DIRECTORY_SEPARATOR . 'questoes.html');
