@@ -24,7 +24,7 @@ final class Database
         $dsn = "mysql:host=$host;dbname=$database";
         
         if ($database === '' || $username === '') {
-            throw new RuntimeException('Configuração do banco de dados incompleta.');
+            throw new RuntimeException('Configuração do banco de dados incompleta. Verifique as variáveis de ambiente.');
         }
 
         self::$connection = new PDO($dsn, $username, $password, [
