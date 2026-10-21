@@ -1,0 +1,9 @@
+.git
+.env
+.env.*.local
+vendor/
+target/
+.mvn/
+src/main/java/
+src/test/
+tests/

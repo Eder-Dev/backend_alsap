@@ -1,0 +1,160 @@
+.export-page-header {
+    max-width: 920px;
+    margin: 0 auto 1.5rem;
+}
+
+.page-kicker {
+    display: block;
+    margin-bottom: 0.35rem;
+    color: #16a34a;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.export-page-header h1 {
+    color: #11101d;
+    margin: 0;
+    font-size: clamp(1.7rem, 3vw, 2.35rem);
+}
+p.subheading {
+    margin-top: 5px;
+    color: rgb(127 127 165);
+}
+.export-panel {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 2rem;
+    background: #fff;
+    border: 1px solid #e6e8f1;
+    border-radius: 1rem;
+    box-shadow: 0 18px 50px rgba(13, 38, 59, 0.08);
+}
+
+.export-panel-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #e6e8f1;
+}
+
+.export-panel-heading h2 {
+    margin: 0;
+    color: #111827;
+    font-size: 1.25rem;
+}
+
+.export-panel-heading p {
+    margin: 0.45rem 0 0;
+    color: #64748b;
+    font-size: 0.92rem;
+}
+
+.export-panel-heading i {
+    color: #16a34a;
+    font-size: 2.3rem;
+}
+
+.states-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+    margin: 1.5rem 0;
+}
+
+.state-export-button,
+.export-all-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    min-height: 3.1rem;
+    border: 1px solid #dbe3ec;
+    border-radius: 0.5rem;
+    color: #1f2937;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.state-export-button {
+    background: #f8fafc;
+}
+
+.state-export-button:hover:not(:disabled) {
+    background: #ecfdf5;
+    border-color: #86efac;
+    color: #166534;
+    transform: translateY(-1px);
+}
+
+.state-export-button i,
+.export-all-button i {
+    font-size: 1.15rem;
+}
+
+.export-all-wrapper {
+    display: flex;
+    justify-content: center;
+    padding-top: 0.35rem;
+}
+
+.export-all-button {
+    width: 100%;
+    border-color: #16a34a;
+    background: #16a34a;
+    color: #fff;
+}
+
+.export-all-button:hover:not(:disabled) {
+    background: #15803d;
+    border-color: #15803d;
+    transform: translateY(-1px);
+}
+
+.state-export-button:disabled,
+.export-all-button:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
+.is-loading i {
+    animation: export-spin 0.9s linear infinite;
+}
+
+.export-status {
+    min-height: 1.5rem;
+    margin: 1.1rem 0 0;
+    color: #64748b;
+    font-size: 0.92rem;
+    text-align: center;
+}
+
+.export-status.success {
+    color: #15803d;
+}
+
+.export-status.error {
+    color: #b91c1c;
+}
+
+@keyframes export-spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 640px) {
+    .home-section {
+        padding: 2rem 1rem;
+    }
+
+    .export-panel {
+        padding: 1.25rem;
+    }
+
+    .states-grid {
+        grid-template-columns: 1fr;
+    }
+}

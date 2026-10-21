@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f2f3ee">
+  <title>Novo questionário | ALSAP</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f2f3ee;
+      --surface: #fffefa;
+      --ink: #172c28;
+      --muted: #67736d;
+      --line: #dce1d9;
+      --green: #176b53;
+      --green-dark: #124d3d;
+      --lime: #d2ef78;
+      --coral: #db6249;
+      --error: #a5352a;
+      --serif: "Palatino Linotype", "Book Antiqua", Georgia, serif;
+      --sans: "Aptos", "Trebuchet MS", "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      background-color: var(--paper);
+      background-image: radial-gradient(#c8d0c5 0.65px, transparent 0.65px);
+      background-size: 17px 17px;
+      font-family: var(--sans);
+    }
+
+    button, textarea { font: inherit; }
+    button { color: inherit; }
+
+    .shell { width: min(1160px, calc(100% - 56px)); margin: 0 auto; }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 82px;
+      border-bottom: 1px solid rgba(23, 44, 40, 0.15);
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+    .brand-mark {
+      display: grid;
+      width: 34px;
+      aspect-ratio: 1;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--green);
+      color: var(--lime);
+      font-family: var(--serif);
+      font-size: 19px;
+    }
+    .brand-name { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; }
+    .topbar-note { color: var(--muted); font-size: 12px; }
+
+    main { padding: 54px 0 72px; }
+
+    .page-heading {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 34px;
+      animation: rise-in 500ms ease-out both;
+    }
+    .eyebrow { margin: 0 0 8px; color: var(--green); font-size: 11px; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; }
+    h1 { margin: 0; font-family: var(--serif); font-size: 42px; font-weight: 400; line-height: 1.08; }
+    .record-mark { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 12px; }
+    .record-mark::before { width: 8px; height: 8px; border-radius: 50%; background: var(--coral); content: ""; }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 208px minmax(0, 1fr) 268px;
+      align-items: start;
+      border: 1px solid #d7ddd4;
+      border-radius: 5px;
+      background: var(--surface);
+      box-shadow: 0 18px 50px rgba(23, 44, 40, 0.07);
+      animation: rise-in 650ms 80ms ease-out both;
+    }
+
+    .step-rail { padding: 30px 22px; border-right: 1px solid var(--line); }
+    .rail-label { margin: 0 0 23px; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+    .step-list { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+    .step-button {
+      display: flex;
+      width: 100%;
+      align-items: center;
+      gap: 11px;
+      padding: 11px 9px;
+      border: 0;
+      border-radius: 3px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      text-align: left;
+      transition: background 160ms ease, color 160ms ease;
+    }
+    .step-button:hover:not(:disabled) { background: #f2f5ee; color: var(--ink); }
+    .step-button:disabled { cursor: default; opacity: 0.48; }
+    .step-button[aria-current="step"] { background: #eaf1e9; color: var(--green-dark); font-weight: 700; }
+    .step-number { display: grid; width: 25px; height: 25px; flex: 0 0 25px; place-items: center; border: 1px solid #cbd3c9; border-radius: 50%; font-size: 11px; }
+    .step-button[aria-current="step"] .step-number { border-color: var(--green); background: var(--green); color: white; }
+    .step-name { font-size: 12px; }
+
+    .form-column { min-width: 0; padding: 33px 38px 35px; }
+    .step-kicker { margin: 0 0 8px; color: var(--coral); font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+    .form-column h2 { margin: 0; font-family: var(--serif); font-size: 29px; font-weight: 400; line-height: 1.2; }
+    .step-description { margin: 9px 0 27px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .form-step[hidden], [hidden] { display: none !important; }
+
+    .type-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .type-option { position: relative; }
+    .type-option input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    .type-card {
+      display: flex;
+      min-height: 120px;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 17px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+    }
+    .type-card:hover { transform: translateY(-2px); border-color: #94aa9d; }
+    .type-option input:checked + .type-card { border-color: var(--green); background: #eef5ec; box-shadow: inset 0 0 0 1px var(--green); }
+    .type-option input:focus-visible + .type-card { outline: 3px solid rgba(23, 107, 83, 0.25); outline-offset: 3px; }
+    .type-code { font-family: var(--serif); font-size: 28px; }
+    .type-hint { color: var(--muted); font-size: 11px; }
+
+    .field-label { display: block; margin-bottom: 10px; font-size: 12px; font-weight: 700; }
+    .optional-label { display: inline-flex; align-items: center; vertical-align: middle; padding: 5px 8px; border-radius: 2px; background: #eef1e8; color: var(--muted); font-family: var(--sans); font-size: 10px; font-weight: 600; }
+    .optional-toggle { display: inline-flex; align-items: center; gap: 10px; min-height: 42px; padding: 0 13px; border: 1px solid var(--line); border-radius: 3px; cursor: pointer; font-size: 12px; font-weight: 600; }
+    .optional-toggle:has(input:checked) { border-color: var(--green); background: #eef5ec; color: var(--green-dark); }
+    .optional-toggle input { width: 16px; height: 16px; margin: 0; accent-color: var(--green); }
+    .optional-fields { min-width: 0; margin: 18px 0 0; padding: 0; border: 0; }
+    .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px 13px; }
+    .field-group { min-width: 0; }
+    .field-group-wide { grid-column: 1 / -1; }
+    .text-input { width: 100%; min-height: 42px; padding: 10px 12px; border: 1px solid #cbd3c9; border-radius: 3px; outline: none; background: white; color: var(--ink); font-size: 13px; }
+    .text-input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(23, 107, 83, 0.12); }
+    .text-input::placeholder { color: #9aa39b; }
+    .required-mark { color: var(--coral); font-size: 10px; font-weight: 600; }
+    .compact-input { min-height: 92px; }
+    .question-input {
+      display: block;
+      width: 100%;
+      min-height: 158px;
+      resize: vertical;
+      padding: 15px 16px;
+      border: 1px solid #cbd3c9;
+      border-radius: 3px;
+      outline: none;
+      background: #fff;
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.6;
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+    }
+    .question-input::placeholder { color: #9aa39b; }
+    .question-input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(23, 107, 83, 0.12); }
+    .field-meta { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; color: var(--muted); font-size: 11px; }
+    .field-meta .counter { font-variant-numeric: tabular-nums; }
+
+    .review-list { margin: 0; border-top: 1px solid var(--line); }
+    .review-row { display: grid; grid-template-columns: 105px minmax(0, 1fr); gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+    .review-row dt { color: var(--muted); font-size: 11px; }
+    .review-row dd { min-width: 0; margin: 0; overflow-wrap: anywhere; font-size: 13px; line-height: 1.55; white-space: pre-wrap; }
+    .review-type { display: inline-flex; align-items: center; padding: 5px 9px; border-radius: 2px; background: #eaf1e9; color: var(--green-dark); font-size: 11px; font-weight: 700; }
+
+    .form-status { min-height: 20px; margin: 16px 0 0; color: var(--error); font-size: 12px; line-height: 1.5; }
+    .form-status:empty { display: none; }
+    .form-actions { display: flex; justify-content: space-between; gap: 12px; margin-top: 21px; padding-top: 20px; border-top: 1px solid var(--line); }
+    .button {
+      min-height: 42px;
+      padding: 0 17px;
+      border: 1px solid transparent;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
+    }
+    .button:hover:not(:disabled) { transform: translateY(-1px); }
+    .button:focus-visible { outline: 3px solid rgba(23, 107, 83, 0.27); outline-offset: 2px; }
+    .button:disabled { cursor: wait; opacity: 0.7; }
+    .button-secondary { border-color: var(--line); background: transparent; }
+    .button-secondary:hover:not(:disabled) { border-color: #aab7ab; background: #f5f6f2; }
+    .button-primary { background: var(--green); color: white; }
+    .button-primary:hover:not(:disabled) { background: var(--green-dark); }
+    .button-primary:disabled { cursor: not-allowed; opacity: 0.42; }
+
+    .preview-column { min-height: 100%; padding: 30px 21px; border-left: 1px solid var(--line); background: #f8f9f4; }
+    .preview-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .preview-heading h3 { margin: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; }
+    .preview-index { color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+    .preview-sheet { min-height: 210px; padding: 19px 16px; border: 1px solid #e0e4dc; border-radius: 3px; background: var(--surface); box-shadow: 0 5px 13px rgba(23, 44, 40, 0.04); }
+    .preview-rule { width: 30px; height: 3px; margin-bottom: 20px; background: var(--coral); }
+    .preview-type { margin: 0 0 14px; color: var(--green); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; }
+    .preview-question { margin: 0; color: #43534b; font-family: var(--serif); font-size: 19px; line-height: 1.4; overflow-wrap: anywhere; white-space: pre-wrap; }
+    .preview-question.is-empty { color: #a1aaa2; font-size: 16px; font-style: italic; }
+    .preview-meta { display: flex; justify-content: space-between; margin-top: 22px; padding-top: 11px; border-top: 1px solid #e7eae4; color: var(--muted); font-size: 9px; }
+    .success-panel { padding: 22px 0 6px; }
+    .success-mark { display: grid; width: 44px; height: 44px; place-items: center; margin-bottom: 18px; border-radius: 50%; background: var(--lime); color: var(--green-dark); font-size: 20px; font-weight: 700; }
+    .success-panel h2 { margin-bottom: 8px; }
+    .success-panel p { color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .success-panel .button { margin-top: 9px; }
+
+    @keyframes rise-in { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 980px) {
+      .workspace { grid-template-columns: 180px minmax(0, 1fr); }
+      .preview-column { grid-column: 2; min-height: 0; padding: 0 38px 28px; border-top: 1px solid var(--line); border-left: 0; }
+      .preview-sheet { min-height: 150px; }
+    }
+
+    @media (max-width: 650px) {
+      .shell { width: min(100% - 30px, 520px); }
+      .topbar { min-height: 66px; }
+      .topbar-note { font-size: 10px; }
+      main { padding: 34px 0 46px; }
+      .page-heading { align-items: start; flex-direction: column; gap: 12px; margin-bottom: 23px; }
+      h1 { font-size: 36px; }
+      .workspace { grid-template-columns: minmax(0, 1fr); }
+      .step-rail { padding: 17px 17px 14px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .rail-label { margin-bottom: 10px; }
+      .step-list { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; }
+      .step-button { justify-content: center; gap: 7px; padding: 8px 4px; }
+      .step-number { width: 22px; height: 22px; flex-basis: 22px; font-size: 10px; }
+      .step-name { display: none; }
+      .form-column { padding: 25px 20px 23px; }
+      .form-column h2 { font-size: 26px; }
+      .step-description { margin-bottom: 22px; }
+      .type-card { min-height: 103px; padding: 13px; }
+      .field-grid { grid-template-columns: minmax(0, 1fr); }
+      .field-group-wide { grid-column: auto; }
+      .review-row { grid-template-columns: 80px minmax(0, 1fr); gap: 10px; }
+      .preview-column { grid-column: 1; padding: 21px 20px 22px; }
+      .preview-sheet { min-height: 145px; }
+      .record-mark { font-size: 11px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="ALSAP, início">
+        <span class="brand-mark" aria-hidden="true">A</span>
+        <span class="brand-name">ALSAP</span>
+      </a>
+      <span class="topbar-note">Atlas Linguístico Sonoro do Amapá</span>
+    </header>
+
+    <main>
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">Acervo / Cadastro completo</p>
+          <h1>Novo questionário</h1>
+        </div>
+        <span class="record-mark">Cadastro</span>
+      </div>
+
+      <div class="workspace">
+        <nav class="step-rail" aria-label="Etapas do questionário">
+          <p class="rail-label">Cadastro</p>
+          <ol class="step-list">
+            <li><button class="step-button" type="button" data-go-step="1" aria-current="step"><span class="step-number">1</span><span class="step-name">Questão</span></button></li>
+            <li><button class="step-button" type="button" data-go-step="2" disabled><span class="step-number">2</span><span class="step-name">Endereço</span></button></li>
+            <li><button class="step-button" type="button" data-go-step="3" disabled><span class="step-number">3</span><span class="step-name">Áudio</span></button></li>
+            <li><button class="step-button" type="button" data-go-step="4" disabled><span class="step-number">4</span><span class="step-name">Narrativa</span></button></li>
+            <li><button class="step-button" type="button" data-go-step="5" disabled><span class="step-number">5</span><span class="step-name">Revisão</span></button></li>
+          </ol>
+        </nav>
+
+        <section class="form-column" aria-label="Formulário do questionário">
+          <form id="question-form">
+            <div class="form-step" data-step="1">
+              <p class="step-kicker">Etapa 01 / 05</p>
+              <h2 id="step-title">Questão</h2>
+              <p class="step-description">Informe a classificação e o enunciado.</p>
+              <fieldset style="margin:0;padding:0;border:0" aria-label="Tipo da questão">
+                <div class="type-options">
+                  <label class="type-option">
+                    <input type="radio" name="tipo" value="QFF" required>
+                    <span class="type-card"><span class="type-code">QFF</span><span class="type-hint">Tipo QFF</span></span>
+                  </label>
+                  <label class="type-option">
+                    <input type="radio" name="tipo" value="QSL" required>
+                    <span class="type-card"><span class="type-code">QSL</span><span class="type-hint">Tipo QSL</span></span>
+                  </label>
+                </div>
+              </fieldset>
+              <div class="field-group" style="margin-top:22px">
+                <label class="field-label" for="descricao">Descrição <span class="required-mark">Obrigatória</span></label>
+                <textarea class="question-input" id="descricao" name="descricao" maxlength="255" placeholder="Escreva a questão..." required></textarea>
+                <div class="field-meta"><span>Até 255 caracteres</span><span class="counter" id="char-count">0 / 255</span></div>
+              </div>
+            </div>
+
+            <div class="form-step" data-step="2" hidden>
+              <p class="step-kicker">Etapa 02 / 05</p>
+              <h2 id="step-title-address">Endereço</h2>
+              <p class="step-description">Registre a localização associada à resposta.</p>
+              <div class="field-grid">
+                <div class="field-group field-group-wide">
+                  <label class="field-label" for="address-name">Nome do local <span class="required-mark">Obrigatório</span></label>
+                  <input class="text-input" id="address-name" type="text" maxlength="255" placeholder="Ex.: Comunidade, bairro ou ponto de coleta" required>
+                </div>
+                <div class="field-group field-group-wide">
+                  <label class="field-label" for="address-cep">CEP <span class="required-mark">Obrigatório</span></label>
+                  <input class="text-input" id="address-cep" type="text" maxlength="255" autocomplete="postal-code" placeholder="00000-000" required>
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="address-latitude">Latitude</label>
+                  <input class="text-input" id="address-latitude" type="number" step="any" placeholder="Ex.: 0.0349">
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="address-longitude">Longitude</label>
+                  <input class="text-input" id="address-longitude" type="number" step="any" placeholder="Ex.: -51.0694">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-step" data-step="3" hidden>
+              <p class="step-kicker">Etapa 03 / 05</p>
+              <h2 id="step-title-audio">Áudio</h2>
+              <p class="step-description">O registro será ligado à resposta e à narrativa.</p>
+              <fieldset class="optional-fields">
+                <div class="field-grid">
+                  <div class="field-group">
+                    <label class="field-label" for="audio-nome">Nome <span class="required-mark">Obrigatório</span></label>
+                    <input class="text-input" id="audio-nome" type="text" maxlength="255" placeholder="Ex.: Entrevista 01" required>
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="audio-tipo">Tipo numérico <span class="required-mark">Obrigatório</span></label>
+                    <input class="text-input" id="audio-tipo" type="number" min="0" step="1" value="0" required>
+                  </div>
+                  <div class="field-group field-group-wide">
+                    <label class="field-label" for="audio-url">URL do áudio <span class="required-mark">Obrigatório</span></label>
+                    <input class="text-input" id="audio-url" type="url" maxlength="255" placeholder="https://..." required>
+                  </div>
+                  <div class="field-group field-group-wide">
+                    <label class="field-label" for="audio-transcricao">Transcrição</label>
+                    <textarea class="question-input compact-input" id="audio-transcricao" maxlength="255" placeholder="Transcrição do áudio"></textarea>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+
+            <div class="form-step" data-step="4" hidden>
+              <p class="step-kicker">Etapa 04 / 05</p>
+              <h2 id="step-title-narrative">Narrativa</h2>
+              <p class="step-description">Informe os dados da pessoa narradora e o conteúdo.</p>
+              <fieldset class="optional-fields">
+                <div class="field-grid">
+                  <div class="field-group">
+                    <label class="field-label" for="narrative-nome">Nome <span class="required-mark">Obrigatório</span></label>
+                    <input class="text-input" id="narrative-nome" type="text" maxlength="255" placeholder="Nome da pessoa narradora" required>
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="narrative-idade">Idade</label>
+                    <input class="text-input" id="narrative-idade" type="text" maxlength="255" placeholder="Idade">
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="narrative-sexo">Sexo</label>
+                    <input class="text-input" id="narrative-sexo" type="text" maxlength="255" placeholder="Sexo">
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="narrative-escolaridade">Escolaridade</label>
+                    <input class="text-input" id="narrative-escolaridade" type="text" maxlength="255" placeholder="Escolaridade">
+                  </div>
+                  <div class="field-group field-group-wide">
+                    <label class="field-label" for="narrative-local">Local <span class="required-mark">Obrigatório</span></label>
+                    <input class="text-input" id="narrative-local" type="text" maxlength="255" placeholder="Ex.: Macapá - AP" required>
+                  </div>
+                  <div class="field-group field-group-wide">
+                    <label class="field-label" for="narrative-transcricao">Transcrição</label>
+                    <textarea class="question-input compact-input" id="narrative-transcricao" placeholder="Texto da narrativa"></textarea>
+                  </div>
+                  <div class="field-group field-group-wide">
+                    <label class="field-label" for="narrative-titulo">Título</label>
+                    <input class="text-input" id="narrative-titulo" type="text" value="Gerado pela API a partir do local informado" readonly>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+
+            <div class="form-step" data-step="5" hidden>
+              <p class="step-kicker">Etapa 05 / 05</p>
+              <h2 id="step-title-review">Revisão</h2>
+              <p class="step-description">Confira os dados antes de registrar.</p>
+              <dl class="review-list">
+                <div class="review-row"><dt>Tipo</dt><dd><span class="review-type" id="review-type">—</span></dd></div>
+                <div class="review-row"><dt>Descrição</dt><dd id="review-description">—</dd></div>
+                <div class="review-row"><dt>Endereço</dt><dd id="review-address">—</dd></div>
+                <div class="review-row"><dt>Resposta</dt><dd id="review-answer">Será criada ligada à questão e ao endereço</dd></div>
+                <div class="review-row"><dt>Áudio</dt><dd id="review-audio">—</dd></div>
+                <div class="review-row"><dt>Narrativa</dt><dd id="review-narrative">—</dd></div>
+                <div class="review-row"><dt>Título</dt><dd id="review-title">Gerado pela API a partir do local</dd></div>
+              </dl>
+            </div>
+
+            <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
+            <div class="form-actions" id="form-actions">
+              <button class="button button-secondary" id="back-button" type="button" hidden>Voltar</button>
+              <span id="action-spacer"></span>
+              <button class="button button-primary" id="next-button" type="button" disabled>Continuar</button>
+              <button class="button button-primary" id="submit-button" type="submit" hidden>Salvar questão</button>
+            </div>
+          </form>
+
+          <div class="success-panel" id="success-panel" role="status" hidden>
+            <span class="success-mark" aria-hidden="true">✓</span>
+            <p class="step-kicker">Registro concluído</p>
+            <h2>Questionário salvo</h2>
+            <p id="success-copy">Os registros foram salvos no acervo.</p>
+            <button class="button button-secondary" id="new-question" type="button">Cadastrar outra</button>
+          </div>
+        </section>
+
+        <aside class="preview-column" aria-label="Prévia da questão">
+          <div class="preview-heading"><h3>Prévia</h3><span class="preview-index">01</span></div>
+          <div class="preview-sheet">
+            <div class="preview-rule" aria-hidden="true"></div>
+            <p class="preview-type" id="preview-type">TIPO DA QUESTÃO</p>
+            <p class="preview-question is-empty" id="preview-question">A descrição aparecerá aqui</p>
+            <div class="preview-meta"><span>ALSAP</span><span>QUESTÃO</span></div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const form = document.querySelector('#question-form');
+    const panels = [...document.querySelectorAll('.form-step')];
+    const stepButtons = [...document.querySelectorAll('[data-go-step]')];
+    const typeInputs = [...document.querySelectorAll('input[name="tipo"]')];
+    const descriptionInput = document.querySelector('#descricao');
+    const addressNameInput = document.querySelector('#address-name');
+    const addressCepInput = document.querySelector('#address-cep');
+    const addressLatitudeInput = document.querySelector('#address-latitude');
+    const addressLongitudeInput = document.querySelector('#address-longitude');
+    const audioNameInput = document.querySelector('#audio-nome');
+    const audioUrlInput = document.querySelector('#audio-url');
+    const audioTranscriptionInput = document.querySelector('#audio-transcricao');
+    const audioTypeInput = document.querySelector('#audio-tipo');
+    const narrativeNameInput = document.querySelector('#narrative-nome');
+    const narrativeLocalInput = document.querySelector('#narrative-local');
+    const narrativeTitleInput = document.querySelector('#narrative-titulo');
+    const nextButton = document.querySelector('#next-button');
+    const backButton = document.querySelector('#back-button');
+    const submitButton = document.querySelector('#submit-button');
+    const statusMessage = document.querySelector('#form-status');
+    const successPanel = document.querySelector('#success-panel');
+    let currentStep = 1;
+
+    function selectedType() {
+      return typeInputs.find((input) => input.checked)?.value ?? '';
+    }
+
+    function hasDescription() {
+      return descriptionInput.value.trim().length > 0;
+    }
+
+    function hasAddressData() {
+      return addressNameInput.value.trim() !== ''
+        && addressCepInput.value.trim() !== ''
+        && addressLatitudeInput.checkValidity()
+        && addressLongitudeInput.checkValidity();
+    }
+
+    function hasAudioData() {
+      return audioNameInput.value.trim() !== ''
+        && audioUrlInput.checkValidity()
+        && audioTypeInput.checkValidity();
+    }
+
+    function optionalValue(id) {
+      return document.querySelector(id).value.trim() || null;
+    }
+
+    function hasNarrativeData() {
+      return narrativeNameInput.value.trim() !== '' && narrativeLocalInput.value.trim() !== '';
+    }
+
+    function isStepValid(step) {
+      if (step === 1) return Boolean(selectedType()) && hasDescription();
+      if (step === 2) return hasAddressData();
+      if (step === 3) return hasAudioData();
+      if (step === 4) return hasNarrativeData();
+      return true;
+    }
+
+    function firstInvalidControl(step) {
+      const controls = {
+        1: [typeInputs.find((input) => input.checked) || typeInputs[0], descriptionInput],
+        2: [addressNameInput, addressCepInput, addressLatitudeInput, addressLongitudeInput],
+        3: [audioNameInput, audioUrlInput, audioTypeInput],
+        4: [narrativeNameInput, narrativeLocalInput],
+      }[step] || [];
+      return controls.find((control) => !control.checkValidity()
+        || (control.type !== 'radio' && control.required && control.value.trim() === ''));
+    }
+
+    function updatePreview() {
+      const type = selectedType();
+      const description = descriptionInput.value.trim();
+      const address = [addressNameInput.value.trim(), addressCepInput.value.trim()].filter(Boolean).join(' · ');
+      const coordinates = [addressLatitudeInput.value, addressLongitudeInput.value].filter(Boolean).join(', ');
+      const narrativeLocal = narrativeLocalInput.value.trim();
+      document.querySelector('#preview-type').textContent = type || 'TIPO DA QUESTÃO';
+      document.querySelector('#preview-question').textContent = description || 'A descrição aparecerá aqui';
+      document.querySelector('#preview-question').classList.toggle('is-empty', !description);
+      document.querySelector('#char-count').textContent = `${descriptionInput.value.length} / 255`;
+      document.querySelector('#review-type').textContent = type || '—';
+      document.querySelector('#review-description').textContent = description || '—';
+      document.querySelector('#review-address').textContent = [address, coordinates].filter(Boolean).join(' · ') || '—';
+      document.querySelector('#review-audio').textContent = [
+        audioNameInput.value.trim(),
+        audioUrlInput.value.trim(),
+        `tipo ${audioTypeInput.value || 0}`,
+        optionalValue('#audio-transcricao'),
+      ].filter(Boolean).join(' · ') || '—';
+      document.querySelector('#review-narrative').textContent = [
+        optionalValue('#narrative-nome'),
+        optionalValue('#narrative-idade'),
+        optionalValue('#narrative-sexo'),
+        optionalValue('#narrative-escolaridade'),
+        narrativeLocal,
+        optionalValue('#narrative-transcricao'),
+      ].filter(Boolean).join(' · ') || '—';
+      narrativeTitleInput.value = narrativeLocal
+        ? `Gerado automaticamente para ${narrativeLocal}`
+        : 'Gerado pela API a partir do local informado';
+      document.querySelector('#review-title').textContent = narrativeTitleInput.value;
+
+      let lastAvailableStep = 1;
+      while (lastAvailableStep < 5 && isStepValid(lastAvailableStep)) lastAvailableStep++;
+      stepButtons.forEach((button) => {
+        button.disabled = Number(button.dataset.goStep) > lastAvailableStep;
+      });
+      nextButton.disabled = currentStep === 5 || !isStepValid(currentStep);
+    }
+
+    function showStep(step) {
+      currentStep = step;
+      panels.forEach((panel) => { panel.hidden = Number(panel.dataset.step) !== step; });
+      stepButtons.forEach((button) => {
+        if (Number(button.dataset.goStep) === step) {
+          button.setAttribute('aria-current', 'step');
+        } else {
+          button.removeAttribute('aria-current');
+        }
+      });
+      backButton.hidden = step === 1;
+      nextButton.hidden = step === 5;
+      nextButton.textContent = step === 4 ? 'Revisar' : 'Continuar';
+      submitButton.hidden = step !== 5;
+      statusMessage.textContent = '';
+      updatePreview();
+    }
+
+    typeInputs.forEach((input) => input.addEventListener('change', updatePreview));
+    form.addEventListener('input', updatePreview);
+    form.addEventListener('change', updatePreview);
+    nextButton.addEventListener('click', () => {
+      if (isStepValid(currentStep)) showStep(currentStep + 1);
+      else firstInvalidControl(currentStep)?.reportValidity();
+    });
+    backButton.addEventListener('click', () => showStep(currentStep - 1));
+    stepButtons.forEach((button) => button.addEventListener('click', () => {
+      const targetStep = Number(button.dataset.goStep);
+      if (!button.disabled) showStep(targetStep);
+    }));
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (![1, 2, 3, 4].every(isStepValid)) {
+        const invalidStep = [1, 2, 3, 4].find((step) => !isStepValid(step));
+        showStep(invalidStep);
+        firstInvalidControl(invalidStep)?.reportValidity();
+        return;
+      }
+
+      submitButton.disabled = true;
+      submitButton.textContent = 'Salvando...';
+      statusMessage.textContent = '';
+      const createdRecords = [];
+      try {
+        const createRecord = async (endpoint, payload = null, method = 'POST') => {
+          const response = await fetch(new URL(endpoint, window.location.href), {
+            method,
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: payload === null ? null : JSON.stringify(payload),
+          });
+          const responseText = await response.text();
+          let result;
+          try { result = responseText ? JSON.parse(responseText) : null; } catch { result = null; }
+          if (!response.ok) throw new Error(result?.message || `Não foi possível salvar em ${endpoint}.`);
+          return result;
+        };
+
+        const questionId = await createRecord('alsap/Questao/create', {
+          descricao: descriptionInput.value.trim(),
+          tipo: selectedType(),
+        });
+        createdRecords.push(Number.isInteger(questionId) ? `Questão ${questionId}` : 'Questão');
+
+        const addressId = await createRecord('alsap/Endereco/create', {
+          nome: addressNameInput.value.trim(),
+          cep: addressCepInput.value.trim(),
+          latitude: addressLatitudeInput.value === '' ? null : Number(addressLatitudeInput.value),
+          longitude: addressLongitudeInput.value === '' ? null : Number(addressLongitudeInput.value),
+        });
+        createdRecords.push(Number.isInteger(addressId) ? `Endereço ${addressId}` : 'Endereço');
+
+        const answerId = await createRecord('alsap/Respostas/create', {
+          endereco_id: addressId,
+          questao_id: questionId,
+        });
+        createdRecords.push(Number.isInteger(answerId) ? `Resposta ${answerId}` : 'Resposta');
+
+        const audioId = await createRecord('alsap/Audio/create', {
+          nome: audioNameInput.value.trim(),
+          transcricao: optionalValue('#audio-transcricao'),
+          audio_url: audioUrlInput.value.trim(),
+          tipo: Number(audioTypeInput.value || 0),
+          resposta_id: answerId,
+        });
+        createdRecords.push(Number.isInteger(audioId) ? `Áudio ${audioId}` : 'Áudio');
+
+        const narrativeId = await createRecord('alsap/Narrativa/create', {
+          nome: narrativeNameInput.value.trim(),
+          idade: optionalValue('#narrative-idade'),
+          sexo: optionalValue('#narrative-sexo'),
+          escolaridade: optionalValue('#narrative-escolaridade'),
+          local: narrativeLocalInput.value.trim(),
+          transcricao: optionalValue('#narrative-transcricao'),
+          audio_id: audioId,
+        });
+        createdRecords.push(Number.isInteger(narrativeId) ? `Narrativa ${narrativeId}` : 'Narrativa');
+
+        let savedTitle = '';
+        try {
+          const savedNarrative = await createRecord(`alsap/Narrativa/${narrativeId}`, null, 'GET');
+          savedTitle = savedNarrative?.titulo || '';
+        } catch {
+          savedTitle = '';
+        }
+
+        document.querySelector('#success-copy').textContent = `Registros salvos: ${createdRecords.join(', ')}.${savedTitle ? ` Título: ${savedTitle}.` : ''}`;
+        form.hidden = true;
+        successPanel.hidden = false;
+      } catch (error) {
+        const message = error instanceof TypeError
+          ? 'Não foi possível conectar à API. Verifique se o servidor está ativo.'
+          : error.message;
+        statusMessage.textContent = createdRecords.length
+          ? `Registros já salvos: ${createdRecords.join(', ')}. Falha no próximo registro: ${message}`
+          : message;
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Salvar questão';
+      }
+    });
+
+    document.querySelector('#new-question').addEventListener('click', () => {
+      form.reset();
+      form.hidden = false;
+      successPanel.hidden = true;
+      showStep(1);
+      updatePreview();
+    });
+
+    updatePreview();
+  </script>
+</body>
+</html>

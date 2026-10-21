@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alsap - Painel Administrativo</title>
+
+    <link rel="stylesheet" href="./css/index.css">
+    <link rel="stylesheet" href="./css/acervo.css">
+    <link rel="stylesheet" href="../styles/global.css">
+    <script src="./js/menu-dash.js" defer></script>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo-details">
+            <div class="logo_name">Alsap</div>
+            <i class='bx bx-menu' id="btn"></i>
+        </div>
+        <ul class="nav-list">
+            <li>
+                <a href="">
+                    <i class='bx bx-grid-alt'></i>
+                    <span class="links_name">Dashboard</span>
+                </a>
+                <span class="tooltip">Dashboard</span>
+            </li>
+            <li>
+                <a href="">
+                    <i class='bx bx-user'></i>
+                    <span class="links_name">Questões</span>
+                </a>
+                <span class="tooltip">Questões</span>
+            </li>
+            <li>
+                <a href="">
+                    <i class='bx bx-folder'></i>
+                    <span class="links_name">Respostas</span>
+                </a>
+                <span class="tooltip">Respostas</span>
+            </li>
+            <li>
+                <a href="">
+                    <i class='bx bx-pie-chart-alt-2'></i>
+                    <span class="links_name">Audios</span>
+                </a>
+                <span class="tooltip">Audios</span>
+            </li>
+            <li>
+                <a href="">
+                    <i class='bx bx-cog'></i>
+                    <span class="links_name">Localizações</span>
+                </a>
+                <span class="tooltip">Localizações</span>
+            </li>
+            <li class="profile">
+                <div class="profile-details">
+                    <img src="../assets/logo.svg" alt="profileImg">
+                    <div class="name_job">
+                        <div class="name">const Genius</div>
+                        <div class="job">Web Developer</div>
+                    </div>
+                </div>
+                <i class='bx bx-log-out' id="log_out"></i>
+            </li>
+        </ul>
+    </div>
+    <section class="home-section" id="content">
+        <h1>Banco de Dados do Acervo</h1>
+        <div>
+            
+        </div>
+    </section>
+
+    <button id="createDocumentBtn" class="create-document-btn" type="button" aria-label="Criar nova questão">
+        <i class='bx bx-plus'></i>
+        <span>Nova questão</span>
+    </button>

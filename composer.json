@@ -1,0 +1,17 @@
+{
+  "name": "udesc/alsap-api",
+  "description": "API ALSAP migrada para PHP e MySQL",
+  "type": "project",
+  "require": {
+    "php": ">=8.1",
+    "ext-pdo": "*",
+    "ext-pdo_mysql": "*",
+    "ext-mbstring": "*",
+    "ext-json": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "Br\\Udesc\\Alsap\\": "src/main/php/"
+    }
+  }
+}
