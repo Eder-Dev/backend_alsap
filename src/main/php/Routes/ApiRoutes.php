@@ -38,7 +38,7 @@ final class ApiRoutes
         $narrativa = new NarrativaController(new NarrativaService($narrativaRepository, $audioRepository, $serializer));
         $questao = new QuestaoController(new QuestaoService($questaoRepository, $serializer));
         $resposta = new RespostaController(new RespostaService($respostaRepository, $enderecoRepository, $questaoRepository, $serializer));
-
+//teste
         return [
             ['GET', '~^/Audio/all$~', static fn(array $match, array $body) => $audio->all()],
             ['GET', '~^/Audio/([0-9]+)$~', static fn(array $match, array $body) => $audio->one((int) $match[1])],
