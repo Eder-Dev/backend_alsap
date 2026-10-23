@@ -22,7 +22,7 @@ function adminEscape(string $value): string
     <link rel="stylesheet" href="./css/admin.css">
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <script src="./js/admin-shell.js" defer></script>
-    <script src="./js/admin.js" defer></script>
+    <script src="./js/admin.js?v=<?= (string) filemtime(__DIR__ . '/../js/admin.js') ?>" defer></script>
 </head>
 <body>
     <div class="sidebar">
@@ -34,36 +34,36 @@ function adminEscape(string $value): string
         </div>
         <ul class="nav-list">
             <li>
-                <a href="#content">
-                    <i class="bx bx-grid-alt" aria-hidden="true"></i>
+                <a href="dashboard.php" class="<?= $activePage === 'dashboard' ? 'active' : '' ?>" <?= $activePage === 'dashboard' ? 'aria-current="page"' : '' ?>>
+                    <i class="bx bx-home-alt-2" aria-hidden="true"></i>
                     <span class="links_name">Dashboard</span>
                 </a>
                 <span class="tooltip">Dashboard</span>
             </li>
             <li>
                 <a href="questoes.php" class="<?= $activePage === 'questoes' ? 'active' : '' ?>" <?= $activePage === 'questoes' ? 'aria-current="page"' : '' ?>>
-                    <i class="bx bx-user" aria-hidden="true"></i>
+                    <i class="bx bx-help-circle" aria-hidden="true"></i>
                     <span class="links_name">Questões</span>
                 </a>
                 <span class="tooltip">Questões</span>
             </li>
             <li>
                 <a href="respostas.php" class="<?= $activePage === 'respostas' ? 'active' : '' ?>" <?= $activePage === 'respostas' ? 'aria-current="page"' : '' ?>>
-                    <i class="bx bx-folder" aria-hidden="true"></i>
+                    <i class="bx bx-message-rounded-detail" aria-hidden="true"></i>
                     <span class="links_name">Respostas</span>
                 </a>
                 <span class="tooltip">Respostas</span>
             </li>
             <li>
                 <a href="audios.php" class="<?= $activePage === 'audios' ? 'active' : '' ?>" <?= $activePage === 'audios' ? 'aria-current="page"' : '' ?>>
-                    <i class="bx bx-pie-chart-alt-2" aria-hidden="true"></i>
+                    <i class="bx bx-music" aria-hidden="true"></i>
                     <span class="links_name">Áudios</span>
                 </a>
                 <span class="tooltip">Áudios</span>
             </li>
             <li>
                 <a href="localizacoes.php" class="<?= $activePage === 'localizacoes' ? 'active' : '' ?>" <?= $activePage === 'localizacoes' ? 'aria-current="page"' : '' ?>>
-                    <i class="bx bx-cog" aria-hidden="true"></i>
+                    <i class="bx bx-map" aria-hidden="true"></i>
                     <span class="links_name">Localizações</span>
                 </a>
                 <span class="tooltip">Localizações</span>

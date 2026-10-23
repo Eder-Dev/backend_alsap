@@ -11,7 +11,17 @@
             listPath: 'all',
             fields: [
                 { name: 'descricao', label: 'Descrição', type: 'text', maxLength: 255 },
-                { name: 'tipo', label: 'Tipo', type: 'text', maxLength: 255 }
+                {
+                    name: 'tipo',
+                    label: 'Tipo',
+                    type: 'radio',
+                    required: true,
+                    defaultValue: 'QFF',
+                    options: [
+                        { value: 'QFF', label: 'Questões Fonética Fonológica' },
+                        { value: 'QSL', label: 'Questões Semântico Lexical' }
+                    ]
+                }
             ],
             columns: [
                 { label: 'ID', value: (record) => record.id },
@@ -44,7 +54,7 @@
             gender: 'm',
             endpoint: 'Audio',
             listPath: 'all',
-            related: ['Respostas/all', 'Narrativa/all'],
+            related: ['Respostas/all', 'Narrativa/all', 'Questao/all'],
             fields: [
                 { name: 'nome', label: 'Nome', type: 'text', maxLength: 255 },
                 { name: 'transcricao', label: 'Transcrição', type: 'textarea', maxLength: 255 },
@@ -239,6 +249,11 @@
             buildIndexes();
             renderTable();
             table.hidden = false;
+            const editId = Number(root.dataset.editId);
+            if (config.endpoint === 'Respostas' && Number.isSafeInteger(editId) && editId > 0 && !state.initialEditHandled) {
+                state.initialEditHandled = true;
+                await openRecord('edit', editId);
+            }
             return true;
         } catch (error) {
             tableBody.innerHTML = `<tr><td colspan="${config.columns.length + 1}" class="admin-empty">${escapeHtml(error.message || 'Não foi possível carregar os registros.')}</td></tr>`;
@@ -269,11 +284,18 @@
             : 'Indisponível';
     }
 
-    function audioAssociations(record) {
+    function audioAssociations(record, currentState) {
         const response = state.responseByAudio.get(Number(record.id));
         const narrative = state.narrativeByAudio.get(Number(record.id));
         const labels = [];
-        if (response) labels.push(`Resposta #${response.id}`);
+        if (response) {
+            const responseId = Number(response.id);
+            const question = currentState.questionByResponse.get(responseId)
+                || (currentState.related.questoes || []).find((item) =>
+                    (item.respostas || []).some((relatedResponse) => Number(relatedResponse.id) === responseId)
+                );
+            labels.push(question?.descricao || 'Questão não identificada');
+        }
         if (narrative) labels.push(`Narrativa #${narrative.id}`);
         return labels.join(' · ') || 'Sem associação identificada';
     }
@@ -314,6 +336,7 @@
                 ${cells}
                 <td>
                     <div class="admin-actions">
+                        ${config.endpoint === 'Respostas' ? `<a class="admin-action" href="editResposta.php?id=${id}" aria-label="Abrir edição da resposta #${id}"><i class="bx bx-right-arrow-alt" aria-hidden="true"></i></a>` : ''}
                         <button class="admin-action" type="button" data-action="view" data-id="${id}"><i class="bx bx-show" aria-hidden="true"></i> Ver</button>
                         <button class="admin-action" type="button" data-action="edit" data-id="${id}"><i class="bx bx-edit" aria-hidden="true"></i> Editar</button>
                         <button class="admin-action delete" type="button" data-action="delete" data-id="${id}"><i class="bx bx-trash" aria-hidden="true"></i> Excluir</button>
@@ -365,6 +388,19 @@
         const valueString = String(value);
         const id = `adminField-${field.name}`;
         let input;
+        if (field.type === 'radio') {
+            input = `<fieldset class="admin-radio-group">
+                <legend>${escapeHtml(field.label)}</legend>
+                ${field.options.map((option, index) => {
+                    const optionId = `${id}-${index}`;
+                    return `<label for="${optionId}">
+                        <input id="${optionId}" name="${field.name}" type="radio" value="${escapeHtml(option.value)}" ${field.required ? 'required' : ''} ${valueString === option.value ? 'checked' : ''} ${readOnly ? 'disabled' : ''}>
+                        <span>${escapeHtml(option.label)}</span>
+                    </label>`;
+                }).join('')}
+            </fieldset>`;
+            return `<div class="modal-field">${input}</div>`;
+        }
         if (field.type === 'select') {
             const options = optionsFor(field);
             input = `<select id="${id}" name="${field.name}" ${field.required ? 'required' : ''} ${readOnly ? 'disabled' : ''}>
