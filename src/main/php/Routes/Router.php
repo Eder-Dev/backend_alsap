@@ -55,6 +55,13 @@ final class Router
 
     public static function body(): array
     {
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+        if (stripos($contentType, 'multipart/form-data') === 0) {
+            $body = $_POST;
+            $body['_files'] = $_FILES;
+            return $body;
+        }
+
         $content = file_get_contents('php://input');
         if ($content === false || trim($content) === '') {
             return [];

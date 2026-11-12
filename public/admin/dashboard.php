@@ -1,18 +1,37 @@
 <?php
 declare(strict_types=1);
 
+if (session_status() !== PHP_SESSION_ACTIVE && !session_start()) {
+    throw new RuntimeException('Não foi possível iniciar a sessão do dashboard.');
+}
+if (!isset($_SESSION['dashboard_csrf_token'])) {
+    $_SESSION['dashboard_csrf_token'] = bin2hex(random_bytes(32));
+}
+
 $pageTitle = 'Dashboard';
 $activePage = 'dashboard';
 require __DIR__ . '/includes/header.php';
 ?>
-<main class="admin-page dashboard-page" data-dashboard data-api-base="<?= adminEscape($apiBase) ?>">
+<main class="admin-page dashboard-page" data-dashboard data-api-base="<?= adminEscape($apiBase) ?>" data-csrf-token="<?= adminEscape($_SESSION['dashboard_csrf_token']) ?>">
     <div class="admin-page-header">
         <div>
             <h1>Dashboard</h1>
             <p>Visão geral do acervo de questões, respostas, áudios e localizações.</p>
         </div>
-        <span class="dashboard-updated" id="dashboardUpdated" aria-live="polite"></span>
+        <div class="dashboard-header-actions">
+            <span class="dashboard-updated" id="dashboardUpdated" aria-live="polite"></span>
+            <button class="dashboard-import-button" id="importSqlBtn" type="button">
+                <i class="bx bx-upload" aria-hidden="true"></i>
+                Importar arquivo SQL
+            </button>
+            <input id="importSqlFile" type="file" accept=".sql,text/plain,application/sql" hidden>
+            <button class="dashboard-format-button" id="formatDatabaseBtn" type="button">
+                <i class="bx bx-trash" aria-hidden="true"></i>
+                Formatar Banco de Dados
+            </button>
+        </div>
     </div>
+    <p class="dashboard-import-help">Aceita INSERT INTO ... VALUES com valores literais nas tabelas do acervo; não importa estrutura do banco (máx. 5 MB).</p>
     <div class="admin-message" id="dashboardMessage" role="status" aria-live="polite"></div>
     <div class="admin-loading" id="dashboardLoading" role="status">Carregando dados do acervo...</div>
     <div class="dashboard-content" id="dashboardContent" hidden>

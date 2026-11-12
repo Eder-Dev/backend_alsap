@@ -7,6 +7,9 @@
     const content = document.getElementById('dashboardContent');
     const message = document.getElementById('dashboardMessage');
     const updated = document.getElementById('dashboardUpdated');
+    const importButton = document.getElementById('importSqlBtn');
+    const importFile = document.getElementById('importSqlFile');
+    const formatButton = document.getElementById('formatDatabaseBtn');
 
     function escapeHtml(value) {
         return String(value ?? '').replace(/[&<>'"]/g, (character) => ({
@@ -140,6 +143,104 @@
             loading.hidden = true;
         }
     }
+
+    importButton.addEventListener('click', () => importFile.click());
+    importFile.addEventListener('change', async () => {
+        const file = importFile.files[0];
+        if (!file) return;
+        if (!file.name.toLowerCase().endsWith('.sql')) {
+            message.textContent = 'Selecione um arquivo com extensão .sql.';
+            message.className = 'admin-message visible error';
+            importFile.value = '';
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            message.textContent = 'O arquivo SQL deve ter no máximo 5 MB.';
+            message.className = 'admin-message visible error';
+            importFile.value = '';
+            return;
+        }
+        if (!window.confirm('Importar este arquivo? Só serão aceitos comandos INSERT INTO ... VALUES com valores literais nas tabelas do acervo.')) {
+            importFile.value = '';
+            return;
+        }
+
+        importButton.disabled = true;
+        formatButton.disabled = true;
+        importButton.textContent = 'Importando...';
+        try {
+            const formData = new FormData();
+            formData.append('csrfToken', root.dataset.csrfToken);
+            formData.append('sqlFile', file);
+            const response = await fetch(`${apiBase}/Database/import`, {
+                method: 'POST',
+                headers: { Accept: 'application/json' },
+                body: formData,
+                cache: 'no-store'
+            });
+            let result;
+            try {
+                result = await response.json();
+            } catch {
+                throw new Error('A API retornou uma resposta inválida ao importar o arquivo SQL.');
+            }
+            if (!response.ok) {
+                throw new Error(result.message || `Não foi possível importar o arquivo SQL (HTTP ${response.status}).`);
+            }
+
+            message.textContent = result.message || 'Arquivo SQL importado com sucesso.';
+            message.className = 'admin-message visible success';
+            await load();
+        } catch (error) {
+            message.textContent = error.message || 'Não foi possível importar o arquivo SQL.';
+            message.className = 'admin-message visible error';
+        } finally {
+            importFile.value = '';
+            importButton.disabled = false;
+            formatButton.disabled = false;
+            importButton.innerHTML = '<i class="bx bx-upload" aria-hidden="true"></i> Importar arquivo SQL';
+        }
+    });
+
+    formatButton.addEventListener('click', async () => {
+        if (!window.confirm('Esta ação apagará todos os registros do acervo e não pode ser desfeita. Deseja continuar?')) return;
+        if (window.prompt('Para confirmar, digite FORMATAR:') !== 'FORMATAR') return;
+
+        formatButton.disabled = true;
+        importButton.disabled = true;
+        formatButton.textContent = 'Formatando...';
+        try {
+            const response = await fetch(`${apiBase}/Database/format`, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ csrfToken: root.dataset.csrfToken }),
+                cache: 'no-store'
+            });
+            let result;
+            try {
+                result = await response.json();
+            } catch {
+                throw new Error('A API retornou uma resposta inválida ao formatar o banco de dados.');
+            }
+            if (!response.ok) {
+                throw new Error(result.message || `Não foi possível formatar o banco de dados (HTTP ${response.status}).`);
+            }
+
+            message.textContent = result.message || 'Registros do acervo removidos com sucesso.';
+            message.className = 'admin-message visible success';
+            await load();
+        } catch (error) {
+            message.textContent = error.message || 'Não foi possível formatar o banco de dados.';
+            message.className = 'admin-message visible error';
+        } finally {
+            formatButton.disabled = false;
+            importButton.disabled = false;
+            formatButton.innerHTML = '<i class="bx bx-trash" aria-hidden="true"></i> Formatar Banco de Dados';
+        }
+    });
 
     load();
 })();

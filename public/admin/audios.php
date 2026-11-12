@@ -19,6 +19,11 @@ require __DIR__ . '/includes/header.php';
             <input id="adminSearch" type="search" placeholder="Pesquisar áudios..." autocomplete="off">
         </label>
         <span id="adminResultCount" class="admin-result-count" aria-live="polite"></span>
+        <button id="importAudiosBtn" class="admin-action" type="button" disabled>
+            <i class="bx bx-upload" aria-hidden="true"></i>
+            Importar CSV
+        </button>
+        <input id="importAudiosFile" class="visually-hidden" type="file" accept=".csv,text/csv" aria-label="Selecionar arquivo CSV de áudios">
     </div>
     <div id="adminMessage" class="admin-message" role="status" aria-live="polite"></div>
     <div id="adminLoading" class="admin-loading" role="status">Carregando áudios...</div>

@@ -106,6 +106,15 @@
     const loading = document.getElementById('adminLoading');
     const message = document.getElementById('adminMessage');
     const createButton = document.getElementById('createDocumentBtn');
+    const importAudiosButton = document.getElementById('importAudiosBtn');
+    const importAudiosFile = document.getElementById('importAudiosFile');
+    const collectiveResponseButton = document.getElementById('collectiveResponseBtn');
+    const collectiveResponseModal = document.getElementById('collectiveResponseModal');
+    const collectiveResponseForm = document.getElementById('collectiveResponseForm');
+    const collectiveQuestionSelect = document.getElementById('collectiveQuestion');
+    const collectiveResponseEstimate = document.getElementById('collectiveResponseEstimate');
+    const collectiveResponseMessage = document.getElementById('collectiveResponseMessage');
+    const collectiveResponseSubmit = document.getElementById('collectiveResponseSubmit');
     const modal = document.createElement('div');
     modal.className = 'modal admin-modal';
     modal.id = 'adminModal';
@@ -139,7 +148,8 @@
         responseByAudio: new Map(),
         narrativeByAudio: new Map(),
         mode: 'create',
-        selectedId: null
+        selectedId: null,
+        loaded: false
     };
 
     function escapeHtml(value) {
@@ -160,6 +170,111 @@
     function clearMessage() {
         message.textContent = '';
         message.className = 'admin-message';
+    }
+
+    function parseCsv(text) {
+        const rows = [];
+        let row = [];
+        let field = '';
+        let insideQuotes = false;
+        let afterQuote = false;
+        let line = 1;
+
+        const finishRow = () => {
+            row.push(field);
+            if (row.some((value) => value.trim() !== '')) rows.push(row);
+            row = [];
+            field = '';
+            afterQuote = false;
+        };
+
+        for (let index = 0; index < text.length; index += 1) {
+            const character = text[index];
+            if (insideQuotes) {
+                if (character === '"') {
+                    if (text[index + 1] === '"') {
+                        field += '"';
+                        index += 1;
+                    } else {
+                        insideQuotes = false;
+                        afterQuote = true;
+                    }
+                } else {
+                    field += character;
+                    if (character === '\n') line += 1;
+                }
+                continue;
+            }
+
+            if (afterQuote && character !== ',' && character !== '\r' && character !== '\n') {
+                throw new Error(`CSV inválido na linha ${line}: conteúdo após o fechamento de aspas.`);
+            }
+            if (character === '"' && field === '') {
+                insideQuotes = true;
+            } else if (character === ',') {
+                row.push(field);
+                field = '';
+                afterQuote = false;
+            } else if (character === '\r' || character === '\n') {
+                finishRow();
+                if (character === '\r' && text[index + 1] === '\n') index += 1;
+                line += 1;
+            } else if (character === '"') {
+                throw new Error(`CSV inválido na linha ${line}: aspas em posição inesperada.`);
+            } else {
+                field += character;
+            }
+        }
+
+        if (insideQuotes) throw new Error(`CSV inválido na linha ${line}: aspas sem fechamento.`);
+        if (field !== '' || row.length > 0 || afterQuote) finishRow();
+        return rows;
+    }
+
+    function audioImportRows(csvText) {
+        const rows = parseCsv(csvText.replace(/^\uFEFF/, ''));
+        const headers = ['nome', 'transcricao', 'resposta_id', 'audio_url', 'tipo'];
+        if (!rows.length || rows[0].map((value) => value.trim().toLocaleLowerCase('pt-BR')).join(',') !== headers.join(',')) {
+            throw new Error(`O cabeçalho do CSV deve ser: ${headers.join(',')}.`);
+        }
+
+        const records = [];
+        const errors = [];
+        rows.slice(1).forEach((values, index) => {
+            const csvRow = index + 2;
+            if (values.length !== headers.length) {
+                errors.push(`Registro ${csvRow}: esperado 5 colunas, encontrado ${values.length}.`);
+                return;
+            }
+
+            const [nome, transcricao, respostaId, audioUrl, tipo] = values.map((value) => value.trim());
+            if (!/^-?\d+$/.test(tipo) || !Number.isSafeInteger(Number(tipo))) {
+                errors.push(`Registro ${csvRow}: tipo deve ser um número inteiro.`);
+                return;
+            }
+            if (respostaId !== '' && (!/^\d+$/.test(respostaId) || !Number.isSafeInteger(Number(respostaId)) || Number(respostaId) < 1)) {
+                errors.push(`Registro ${csvRow}: resposta_id deve ser um identificador positivo ou vazio.`);
+                return;
+            }
+
+            records.push({
+                rowNumber: csvRow,
+                payload: {
+                    nome: nome || null,
+                    transcricao: transcricao || null,
+                    resposta_id: respostaId === '' ? null : Number(respostaId),
+                    audio_url: audioUrl || null,
+                    tipo: Number(tipo),
+                    narrativa_id: null
+                }
+            });
+        });
+
+        if (!records.length) {
+            const details = errors.length ? ` ${errors.slice(0, 5).join(' ')}` : '';
+            throw new Error(`Nenhum registro válido para importar.${details}`);
+        }
+        return { records, errors };
     }
 
     function apiFailure(status, action) {
@@ -248,6 +363,12 @@
             });
             buildIndexes();
             renderTable();
+            state.loaded = true;
+            if (importAudiosButton) importAudiosButton.disabled = false;
+            if (collectiveResponseButton) {
+                populateCollectiveQuestions();
+                collectiveResponseButton.disabled = !state.related.enderecos?.length || !state.related.questoes?.length;
+            }
             table.hidden = false;
             const editId = Number(root.dataset.editId);
             if (config.endpoint === 'Respostas' && Number.isSafeInteger(editId) && editId > 0 && !state.initialEditHandled) {
@@ -256,7 +377,10 @@
             }
             return true;
         } catch (error) {
+            state.loaded = false;
+            if (collectiveResponseButton) collectiveResponseButton.disabled = true;
             tableBody.innerHTML = `<tr><td colspan="${config.columns.length + 1}" class="admin-empty">${escapeHtml(error.message || 'Não foi possível carregar os registros.')}</td></tr>`;
+            if (importAudiosButton) importAudiosButton.disabled = true;
             table.hidden = false;
             resultCount.textContent = '';
             showMessage(error.message || 'Não foi possível carregar os registros.');
@@ -344,6 +468,45 @@
                 </td>
             </tr>`;
         }).join('');
+    }
+
+    function populateCollectiveQuestions() {
+        if (!collectiveQuestionSelect) return;
+        const questions = state.related.questoes || [];
+        collectiveQuestionSelect.innerHTML = `<option value="">Selecione uma pergunta...</option>${questions.map((question) =>
+            `<option value="${escapeHtml(question.id)}">${escapeHtml(question.descricao || `Pergunta #${question.id}`)} (#${escapeHtml(question.id)})</option>`
+        ).join('')}`;
+        updateCollectiveEstimate();
+    }
+
+    function collectiveCounts(questionId) {
+        const existingAddressIds = new Set();
+        state.records.forEach((response) => {
+            const question = state.questionByResponse.get(Number(response.id));
+            const addressId = Number(response.endereco?.id);
+            if (Number(question?.id) === questionId && Number.isSafeInteger(addressId)) {
+                existingAddressIds.add(addressId);
+            }
+        });
+        const addresses = state.related.enderecos || [];
+        return {
+            addresses,
+            existing: addresses.filter((address) => existingAddressIds.has(Number(address.id))).length,
+            pending: addresses.filter((address) => !existingAddressIds.has(Number(address.id)))
+        };
+    }
+
+    function updateCollectiveEstimate() {
+        if (!collectiveResponseEstimate || !collectiveQuestionSelect) return;
+        const questionId = Number(collectiveQuestionSelect.value);
+        if (!Number.isSafeInteger(questionId) || questionId < 1) {
+            collectiveResponseEstimate.textContent = 'Selecione uma pergunta para ver quantas respostas serão criadas.';
+            if (collectiveResponseSubmit) collectiveResponseSubmit.disabled = true;
+            return;
+        }
+        const { addresses, existing, pending } = collectiveCounts(questionId);
+        collectiveResponseEstimate.textContent = `Serão criadas ${pending.length} resposta(s) para os municípios cadastrados; ${existing} município(s) com resposta existente serão ignorados.`;
+        if (collectiveResponseSubmit) collectiveResponseSubmit.disabled = addresses.length === 0 || pending.length === 0;
     }
 
     function optionsFor(field) {
@@ -496,6 +659,133 @@
         clearMessage();
         setModal('create');
     });
+    if (collectiveResponseButton && collectiveResponseModal && collectiveResponseForm) {
+        const closeCollectiveModal = () => {
+            collectiveResponseModal.classList.remove('active');
+            collectiveResponseModal.setAttribute('aria-hidden', 'true');
+            if (!modal.classList.contains('active')) document.body.style.overflow = '';
+        };
+
+        collectiveResponseButton.addEventListener('click', () => {
+            collectiveResponseMessage.textContent = '';
+            collectiveResponseMessage.className = 'admin-message';
+            updateCollectiveEstimate();
+            collectiveResponseModal.classList.add('active');
+            collectiveResponseModal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            collectiveQuestionSelect.focus();
+        });
+        collectiveQuestionSelect.addEventListener('change', updateCollectiveEstimate);
+        collectiveResponseModal.querySelectorAll('[data-collective-close]').forEach((button) => {
+            button.addEventListener('click', closeCollectiveModal);
+        });
+        collectiveResponseModal.addEventListener('click', (event) => {
+            if (event.target === collectiveResponseModal) closeCollectiveModal();
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && collectiveResponseModal.classList.contains('active')) {
+                closeCollectiveModal();
+            }
+        });
+        collectiveResponseForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!collectiveResponseForm.reportValidity()) return;
+
+            const questionId = Number(collectiveQuestionSelect.value);
+            const { pending } = collectiveCounts(questionId);
+            if (!pending.length) {
+                updateCollectiveEstimate();
+                return;
+            }
+
+            collectiveResponseSubmit.disabled = true;
+            collectiveResponseSubmit.textContent = 'Criando respostas...';
+            collectiveResponseModal.querySelectorAll('[data-collective-close]').forEach((button) => {
+                button.disabled = true;
+            });
+            const failures = [];
+            let created = 0;
+            try {
+                for (let index = 0; index < pending.length; index += 1) {
+                    const address = pending[index];
+                    collectiveResponseMessage.textContent = `Criando resposta ${index + 1} de ${pending.length}...`;
+                    collectiveResponseMessage.className = 'admin-message visible info';
+                    try {
+                        await request(`${config.endpoint}/create`, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                endereco_id: Number(address.id),
+                                questao_id: questionId
+                            })
+                        });
+                        created += 1;
+                    } catch (error) {
+                        failures.push(`${address.nome || `Município #${address.id}`}: ${error.message || 'falha ao criar resposta.'}`);
+                    }
+                }
+
+                const refreshed = created > 0 ? await loadData() : true;
+                const summary = `Resposta coletiva concluída: ${created} de ${pending.length} resposta(s) criada(s).`
+                    + (failures.length ? ` Falhas: ${failures.slice(0, 5).join(' ')}` : '')
+                    + (!refreshed ? ' Não foi possível atualizar a lista; recarregue a página.' : '');
+                closeCollectiveModal();
+                showMessage(summary, failures.length || !refreshed ? 'error' : 'success');
+            } catch (error) {
+                collectiveResponseMessage.textContent = error.message || 'Não foi possível criar as respostas coletivas.';
+                collectiveResponseMessage.className = 'admin-message visible error';
+            } finally {
+                collectiveResponseSubmit.textContent = 'Criar respostas';
+                collectiveResponseModal.querySelectorAll('[data-collective-close]').forEach((button) => {
+                    button.disabled = false;
+                });
+                updateCollectiveEstimate();
+            }
+        });
+    }
+    if (importAudiosButton && importAudiosFile) {
+        importAudiosButton.addEventListener('click', () => importAudiosFile.click());
+        importAudiosFile.addEventListener('change', async () => {
+            const file = importAudiosFile.files[0];
+            if (!file) return;
+
+            importAudiosButton.disabled = true;
+            importAudiosFile.disabled = true;
+            try {
+                const { records, errors } = audioImportRows(await file.text());
+                const invalidCount = errors.length;
+                const confirmation = `Importar ${records.length} novos áudios${invalidCount ? ` e ignorar ${invalidCount} registro(s) inválido(s)` : ''}?\n\nA importação cria novos registros; importar o mesmo arquivo novamente pode gerar duplicatas.`;
+                if (!window.confirm(confirmation)) return;
+
+                const failures = [...errors];
+                let imported = 0;
+                for (let index = 0; index < records.length; index += 1) {
+                    message.textContent = `Importando áudio ${index + 1} de ${records.length}...`;
+                    message.className = 'admin-message visible info';
+                    try {
+                        await request(`${config.endpoint}/create`, {
+                            method: 'POST',
+                            body: JSON.stringify(records[index].payload)
+                        });
+                        imported += 1;
+                    } catch (error) {
+                        failures.push(`Registro ${records[index].rowNumber}: ${error.message || 'falha ao cadastrar.'}`);
+                    }
+                }
+
+                const refreshed = imported > 0 ? await loadData() : true;
+                const summary = `Importação concluída: ${imported} de ${records.length} áudio(s) importado(s).`
+                    + (failures.length ? ` ${failures.length} registro(s) não foram importados. ${failures.slice(0, 5).join(' ')}` : '')
+                    + (!refreshed ? ' Não foi possível atualizar a lista; recarregue a página.' : '');
+                showMessage(summary, failures.length || !refreshed ? 'error' : 'success');
+            } catch (error) {
+                showMessage(error.message || 'Não foi possível importar o arquivo CSV.');
+            } finally {
+                importAudiosFile.value = '';
+                importAudiosFile.disabled = false;
+                importAudiosButton.disabled = !state.loaded;
+            }
+        });
+    }
     searchInput.addEventListener('input', renderTable);
     modal.querySelectorAll('[data-close-modal]').forEach((button) => button.addEventListener('click', closeModal));
     modal.addEventListener('click', (event) => {

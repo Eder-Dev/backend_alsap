@@ -4,11 +4,14 @@ declare(strict_types=1);
 namespace Br\Udesc\Alsap\Routes;
 
 use Br\Udesc\Alsap\Config\Database;
+use Br\Udesc\Alsap\Config\HttpResponse;
 use Br\Udesc\Alsap\Controller\AudioController;
+use Br\Udesc\Alsap\Controller\DatabaseMaintenanceController;
 use Br\Udesc\Alsap\Controller\EnderecoController;
 use Br\Udesc\Alsap\Controller\NarrativaController;
 use Br\Udesc\Alsap\Controller\QuestaoController;
 use Br\Udesc\Alsap\Controller\RespostaController;
+use Br\Udesc\Alsap\Controller\SqlImportController;
 use Br\Udesc\Alsap\Entity\JsonSerializer;
 use Br\Udesc\Alsap\Repository\AudioRepository;
 use Br\Udesc\Alsap\Repository\EnderecoRepository;
@@ -34,6 +37,8 @@ final class ApiRoutes
         $respostaRepository = new RespostaRepository($pdo);
 
         $audio = new AudioController(new AudioService($audioRepository, $respostaRepository, $narrativaRepository, $serializer));
+        $databaseMaintenance = new DatabaseMaintenanceController($pdo);
+        $sqlImport = new SqlImportController($pdo);
         $endereco = new EnderecoController(new EnderecoService($enderecoRepository, $serializer));
         $narrativa = new NarrativaController(new NarrativaService($narrativaRepository, $audioRepository, $serializer));
         $questao = new QuestaoController(new QuestaoService($questaoRepository, $serializer));
@@ -67,6 +72,37 @@ final class ApiRoutes
             ['POST', '~^/Respostas/create$~', static fn(array $match, array $body) => $resposta->create($body)],
             ['PUT', '~^/Respostas/update/([0-9]+)$~', static fn(array $match, array $body) => $resposta->update((int) $match[1], $body)],
             ['DELETE', '~^/Respostas/delete/([0-9]+)$~', static fn(array $match, array $body) => $resposta->delete((int) $match[1])],
+            ['POST', '~^/Database/format$~', static function (array $match, array $body) use ($databaseMaintenance): HttpResponse {
+                return self::dashboardCsrfError($body) ?? $databaseMaintenance->format();
+            }],
+            ['POST', '~^/Database/import$~', static function (array $match, array $body) use ($sqlImport): HttpResponse {
+                $csrfError = self::dashboardCsrfError($body);
+                if ($csrfError !== null) {
+                    return $csrfError;
+                }
+
+                $file = $body['_files']['sqlFile'] ?? null;
+                if (!is_array($file)) {
+                    return new HttpResponse(['message' => 'Selecione um arquivo SQL para importar.'], 400);
+                }
+
+                return $sqlImport->importFile($file);
+            }],
         ];
+    }
+
+    private static function dashboardCsrfError(array $body): ?HttpResponse
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE && !session_start()) {
+            throw new \RuntimeException('Não foi possível iniciar a sessão.');
+        }
+
+        $token = $body['csrfToken'] ?? null;
+        $sessionToken = $_SESSION['dashboard_csrf_token'] ?? null;
+        if (!is_string($token) || !is_string($sessionToken) || !hash_equals($sessionToken, $token)) {
+            return new HttpResponse(['message' => 'Token de segurança inválido ou expirado.'], 403);
+        }
+
+        return null;
     }
 }
